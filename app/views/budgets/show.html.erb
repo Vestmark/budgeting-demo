@@ -1,0 +1,160 @@
+<div class="py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          <%= @budget.name %>
+        </h2>
+        <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+          <div class="mt-2 flex items-center text-sm text-gray-500">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              <%= @budget.budget_type.humanize %>
+            </span>
+          </div>
+          <div class="mt-2 flex items-center text-sm text-gray-500">
+            <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+            </svg>
+            <%= @budget.start_date.strftime("%B %d, %Y") %> 
+            <% if @budget.end_date.present? %>
+              - <%= @budget.end_date.strftime("%B %d, %Y") %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 flex md:mt-0 md:ml-4">
+        <%= link_to "Edit", edit_budget_path(@budget), class: "ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+        <%= button_to "Delete", @budget, method: :delete, 
+            data: { confirm: "Are you sure?" },
+            class: "ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" %>
+      </div>
+    </div>
+
+    <!-- Budget Overview -->
+    <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+      <div class="px-4 py-5 sm:p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Total Budget</p>
+            <p class="mt-1 text-3xl font-semibold text-gray-900">
+              $<%= number_with_precision(@budget.amount, precision: 2, delimiter: ',') %>
+            </p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-medium text-gray-500">Spent</p>
+            <p class="mt-1 text-3xl font-semibold <%= @budget.percentage_used > 100 ? 'text-red-600' : 'text-gray-900' %>">
+              $<%= number_with_precision(@budget.total_spent, precision: 2, delimiter: ',') %>
+            </p>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <div class="bg-gray-200 rounded-full h-4">
+            <div class="h-4 rounded-full <%= @budget.percentage_used > 100 ? 'bg-red-600' : @budget.percentage_used > 80 ? 'bg-yellow-500' : 'bg-indigo-600' %>" 
+                 style="width: <%= [@budget.percentage_used, 100].min %>%"></div>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-sm">
+            <span class="font-medium text-gray-900"><%= @budget.percentage_used %>% used</span>
+            <span class="text-gray-500">
+              $<%= number_with_precision(@budget.remaining_amount, precision: 2, delimiter: ',') %> remaining
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Allocations -->
+    <% if @budget_categories.any? %>
+      <div class="mt-8">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Category Allocations</h3>
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul class="divide-y divide-gray-200">
+            <% @budget_categories.each do |budget_category| %>
+              <% category_spent = @budget.user.transactions
+                                        .where(category: budget_category.category)
+                                        .where(transaction_type: :expense)
+                                        .where(date: @budget.date_range)
+                                        .sum(:amount) %>
+              <% percentage = budget_category.amount.zero? ? 0 : ((category_spent / budget_category.amount) * 100).round(2) %>
+              
+              <li class="px-4 py-4 sm:px-6">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <span class="text-2xl mr-3"><%= budget_category.category.icon %></span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900"><%= budget_category.category.name %></p>
+                      <p class="text-sm text-gray-500">
+                        $<%= number_with_precision(category_spent, precision: 2, delimiter: ',') %> of 
+                        $<%= number_with_precision(budget_category.amount, precision: 2, delimiter: ',') %>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="w-32">
+                    <div class="text-right text-sm font-medium <%= percentage > 100 ? 'text-red-600' : 'text-gray-900' %>">
+                      <%= percentage %>%
+                    </div>
+                    <div class="mt-1 bg-gray-200 rounded-full h-2">
+                      <div class="h-2 rounded-full <%= percentage > 100 ? 'bg-red-600' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500' %>" 
+                           style="width: <%= [percentage, 100].min %>%"></div>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Recent Transactions -->
+    <div class="mt-8">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Transactions</h3>
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+          <% if @transactions.any? %>
+            <% @transactions.limit(10).each do |transaction| %>
+              <li>
+                <div class="px-4 py-4 flex items-center sm:px-6">
+                  <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div class="truncate">
+                      <div class="flex text-sm">
+                        <p class="font-medium text-gray-900 truncate"><%= transaction.description || "No description" %></p>
+                        <p class="ml-1 flex-shrink-0 font-normal text-gray-500">
+                          in <%= transaction.category.name %>
+                        </p>
+                      </div>
+                      <div class="mt-2 flex">
+                        <div class="flex items-center text-sm text-gray-500">
+                          <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                          </svg>
+                          <p><%= transaction.date.strftime("%B %d, %Y") %></p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
+                      <p class="text-red-600 font-medium">
+                        -$<%= number_with_precision(transaction.amount, precision: 2, delimiter: ',') %>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            <% end %>
+          <% else %>
+            <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+              No transactions in this budget period yet.
+            </li>
+          <% end %>
+        </ul>
+        <% if @transactions.count > 10 %>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6">
+            <%= link_to "View all #{@transactions.count} transactions", transactions_path(budget_id: @budget.id), 
+                class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

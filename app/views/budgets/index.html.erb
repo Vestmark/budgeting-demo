@@ -1,0 +1,104 @@
+<div class="py-6">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center">
+      <h1 class="text-3xl font-bold text-gray-900">Budgets</h1>
+      <%= link_to "New Budget", new_budget_path, class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+    <!-- Active Budgets -->
+    <div class="mt-8">
+      <h2 class="text-lg font-medium text-gray-900 mb-4">Active Budgets</h2>
+      <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+          <% if @active_budgets.any? %>
+            <% @active_budgets.each do |budget| %>
+              <li>
+                <%= link_to budget, class: "block hover:bg-gray-50" do %>
+                  <div class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center">
+                        <p class="text-sm font-medium text-indigo-600 truncate"><%= budget.name %></p>
+                        <p class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          <%= budget.budget_type.humanize %>
+                        </p>
+                      </div>
+                      <div class="ml-2 flex-shrink-0 flex">
+                        <p class="text-sm text-gray-500">
+                          $<%= number_with_precision(budget.total_spent, precision: 2, delimiter: ',') %> / $<%= number_with_precision(budget.amount, precision: 2, delimiter: ',') %>
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-2">
+                      <div class="bg-gray-200 rounded-full h-2">
+                        <div class="bg-indigo-600 h-2 rounded-full" style="width: <%= [budget.percentage_used, 100].min %>%"></div>
+                      </div>
+                      <p class="mt-2 text-sm text-gray-500">
+                        <%= budget.percentage_used %>% used • $<%= number_with_precision(budget.remaining_amount, precision: 2, delimiter: ',') %> remaining
+                      </p>
+                    </div>
+                  </div>
+                <% end %>
+              </li>
+            <% end %>
+          <% else %>
+            <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+              No active budgets
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Upcoming Budgets -->
+    <% if @upcoming_budgets.any? %>
+      <div class="mt-8">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Upcoming Budgets</h2>
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul class="divide-y divide-gray-200">
+            <% @upcoming_budgets.each do |budget| %>
+              <li>
+                <%= link_to budget, class: "block hover:bg-gray-50" do %>
+                  <div class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-gray-900 truncate"><%= budget.name %></p>
+                      <p class="text-sm text-gray-500">
+                        Starts <%= budget.start_date.strftime("%B %d, %Y") %>
+                      </p>
+                    </div>
+                  </div>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Past Budgets -->
+    <% if @past_budgets.any? %>
+      <div class="mt-8">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Past Budgets</h2>
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul class="divide-y divide-gray-200">
+            <% @past_budgets.each do |budget| %>
+              <li>
+                <%= link_to budget, class: "block hover:bg-gray-50" do %>
+                  <div class="px-4 py-4 sm:px-6">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-gray-500 truncate"><%= budget.name %></p>
+                      <p class="text-sm text-gray-500">
+                        Ended <%= budget.end_date.strftime("%B %d, %Y") %>
+                      </p>
+                    </div>
+                  </div>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,29 @@
+{
+  "name": "Personal Budgeting App",
+  "description": "A simple budgeting app built with Rails 8",
+  "repository": "https://github.com/yourusername/budgeting",
+  "keywords": ["ruby", "rails", "budgeting", "finance"],
+  "addons": [
+    "heroku-postgresql:mini"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/ruby"
+    }
+  ],
+  "env": {
+    "RAILS_MASTER_KEY": {
+      "description": "Rails master key for credentials",
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "scripts": {
+    "postdeploy": "bundle exec rails db:seed"
+  }
+}

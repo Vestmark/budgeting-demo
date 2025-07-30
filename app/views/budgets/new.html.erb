@@ -1,0 +1,165 @@
+<div class="py-6">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="md:flex md:items-center md:justify-between">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+          New Budget
+        </h2>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <%= form_with model: @budget, local: true do |form| %>
+        <% if @budget.errors.any? %>
+          <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <h3 class="text-sm font-medium text-red-800">There were <%= pluralize(@budget.errors.count, "error") %>:</h3>
+            <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+              <% @budget.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div class="bg-white shadow sm:rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <div class="grid grid-cols-6 gap-6">
+              <!-- Budget Name -->
+              <div class="col-span-6 sm:col-span-4">
+                <%= form.label :name, class: "block text-sm font-medium text-gray-700" %>
+                <%= form.text_field :name, 
+                    class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md",
+                    placeholder: "e.g., Monthly Expenses, Vacation Fund, Holiday Shopping" %>
+              </div>
+
+              <!-- Budget Type -->
+              <div class="col-span-6 sm:col-span-3">
+                <%= form.label :budget_type, class: "block text-sm font-medium text-gray-700" %>
+                <%= form.select :budget_type, 
+                    options_for_select([
+                      ['Monthly Budget', 'monthly'],
+                      ['Goal-Based Budget', 'goal_based'],
+                      ['Annual Budget', 'annual']
+                    ]), 
+                    { prompt: 'Select budget type' },
+                    class: "mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm",
+                    data: { action: "change->budget-form#toggleDateFields" } %>
+              </div>
+
+              <!-- Total Amount -->
+              <div class="col-span-6 sm:col-span-3">
+                <%= form.label :amount, "Total Budget Amount", class: "block text-sm font-medium text-gray-700" %>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <%= form.number_field :amount, 
+                      step: :any,
+                      min: 0,
+                      class: "focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-3 sm:text-sm border-gray-300 rounded-md",
+                      placeholder: "0.00" %>
+                </div>
+              </div>
+
+              <!-- Start Date -->
+              <div class="col-span-6 sm:col-span-3">
+                <%= form.label :start_date, class: "block text-sm font-medium text-gray-700" %>
+                <%= form.date_field :start_date, 
+                    value: Date.current,
+                    class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+              </div>
+
+              <!-- End Date (for goal-based budgets) -->
+              <div class="col-span-6 sm:col-span-3" data-budget-form-target="endDateField" style="display: none;">
+                <%= form.label :end_date, class: "block text-sm font-medium text-gray-700" %>
+                <%= form.date_field :end_date, 
+                    class: "mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" %>
+              </div>
+            </div>
+
+            <!-- Category Allocations -->
+            <div class="mt-8">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Category Allocations (Optional)</h3>
+              <p class="text-sm text-gray-500 mb-4">Allocate specific amounts to categories. Leave blank to track against the total budget.</p>
+              
+              <div class="space-y-4" data-budget-form-target="categories">
+                <% @categories.each do |category| %>
+                  <div class="flex items-center space-x-4">
+                    <div class="flex items-center flex-1">
+                      <span class="text-2xl mr-3"><%= category.icon %></span>
+                      <label class="text-sm font-medium text-gray-700"><%= category.name %></label>
+                    </div>
+                    <div class="w-32">
+                      <div class="relative rounded-md shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span class="text-gray-500 text-sm">$</span>
+                        </div>
+                        <input type="number" 
+                               name="budget[category_allocations][<%= category.id %>]" 
+                               step="any"
+                               min="0"
+                               class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-3 text-sm border-gray-300 rounded-md"
+                               placeholder="0.00"
+                               data-action="input->budget-form#updateTotal"
+                               data-category-id="<%= category.id %>">
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+
+              <div class="mt-4 flex items-center justify-between pt-4 border-t">
+                <span class="text-sm font-medium text-gray-700">Total Allocated:</span>
+                <span class="text-lg font-medium text-gray-900" data-budget-form-target="totalAllocated">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
+            <%= link_to "Cancel", budgets_path, class: "inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+            <%= form.submit "Create Budget", class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const budgetTypeSelect = document.querySelector('[data-action="change->budget-form#toggleDateFields"]');
+  const endDateField = document.querySelector('[data-budget-form-target="endDateField"]');
+  const categoryInputs = document.querySelectorAll('[data-action="input->budget-form#updateTotal"]');
+  const totalAllocated = document.querySelector('[data-budget-form-target="totalAllocated"]');
+
+  // Toggle end date field based on budget type
+  function toggleDateFields() {
+    const budgetType = budgetTypeSelect.value;
+    if (budgetType === 'goal_based') {
+      endDateField.style.display = 'block';
+    } else {
+      endDateField.style.display = 'none';
+    }
+  }
+
+  // Update total allocated amount
+  function updateTotal() {
+    let total = 0;
+    categoryInputs.forEach(input => {
+      const value = parseFloat(input.value) || 0;
+      total += value;
+    });
+    totalAllocated.textContent = '$' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // Event listeners
+  if (budgetTypeSelect) {
+    budgetTypeSelect.addEventListener('change', toggleDateFields);
+    toggleDateFields(); // Initial check
+  }
+
+  categoryInputs.forEach(input => {
+    input.addEventListener('input', updateTotal);
+  });
+});
+</script>
